@@ -107,6 +107,48 @@ sort_results=False)` — see the docstring in `src/snn_numba/snn.py` for full
 semantics. Use `dtype=np.float32` for ~2× faster queries at the cost of
 occasional float-rounding disagreements exactly on the radius boundary.
 
+## Squidpy integration (Builder extension)
+
+`snn_numba` ships a [squidpy](https://squidpy.readthedocs.io) **Builder class
+extension** (per the
+[extensibility guide](https://squidpy.readthedocs.io/en/latest/extensibility.html)):
+`SNNRadiusBuilder` subclasses squidpy's `GraphBuilderCSR` and builds the generic
+**fixed-radius** spatial-neighbor graph with SNN's fast, exact radius search
+instead of a KD-tree. A radius graph is exactly what SNN computes, so this is a
+natural drop-in.
+
+```python
+import squidpy as sq
+from snn_numba.squidpy import SNNRadiusBuilder
+
+# plug the builder into squidpy's API
+sq.gr.spatial_neighbors_from_builder(adata, SNNRadiusBuilder(radius=50.0))
+# -> fills adata.obsp["spatial_connectivities"], adata.obsp["spatial_distances"]
+#    and adata.uns["spatial"]
+
+# or the one-line convenience wrapper
+from snn_numba.squidpy import spatial_neighbors
+spatial_neighbors(adata, radius=50.0)          # set_diag=False by default
+spatial_neighbors(adata, radius=50.0, dtype="float32")  # faster, ~exact
+```
+
+The builder implements the protocol's only mandatory method,
+`build_graph(self, coords) -> (adj, dst)` returning two `csr_matrix` objects
+(connectivities and distances), plus the optional `uns_params()`. The graph
+construction itself is also exposed squidpy-free as
+`snn_numba.snn_radius_graph(coords, radius, set_diag=False)` (returns the same
+`(adj, dst)` pair), which is handy for testing or non-squidpy pipelines.
+
+squidpy is an **optional** dependency — install it with:
+
+```sh
+uv sync --extra squidpy   # needs a squidpy version exposing the builder API
+```
+
+`from snn_numba.squidpy import …` raises a clear `ImportError` if squidpy (with
+the builder API) isn't installed; the rest of `snn_numba` has no squidpy
+dependency.
+
 ## Benchmarks
 
 Hardware: 16 threads (shared machine — expect some run-to-run variance in the
@@ -202,7 +244,11 @@ single-point queries, float32 tolerance, and input validation.
 src/snn_numba/
   snn.py         # SNN class: build + query_radius (sklearn-like API)
   _kernels.py    # Numba parallel radius kernels (the hot path)
+  _graph.py      # snn_radius_graph: (adj, dst) CSR radius graph (squidpy-free)
+  squidpy.py     # SNNRadiusBuilder: squidpy GraphBuilderCSR extension
 tests/test_snn.py
+tests/test_graph.py            # radius-graph core vs brute force / sklearn
+tests/test_squidpy_builder.py  # squidpy integration (skipped if not installed)
 bench/
   run_bench.py   # speed + accuracy benchmarks, plots
   common.py      # data generation, radius tuning, timing

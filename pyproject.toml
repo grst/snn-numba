@@ -21,6 +21,13 @@ bench = [
     "pybind11>=2.11",
     "tabulate>=0.9",
 ]
+# Optional integration: build squidpy spatial-neighbor graphs with SNN.
+# Requires a squidpy version exposing the builder API (GraphBuilderCSR /
+# spatial_neighbors_from_builder).
+squidpy = [
+    "squidpy>=1.8",
+    "anndata>=0.10",
+]
 
 [dependency-groups]
 dev = [

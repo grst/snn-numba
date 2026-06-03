@@ -9,7 +9,12 @@ Example
 >>> ind = snn.query_radius(X[:1], 0.8) # neighbors within radius 0.8
 """
 
+from ._graph import snn_radius_graph
 from .snn import SNN
 
-__all__ = ["SNN"]
+# Note: the squidpy integration lives in ``snn_numba.squidpy`` and is imported
+# explicitly (``from snn_numba.squidpy import SNNRadiusBuilder``) so that the
+# core package has no hard dependency on squidpy.
+
+__all__ = ["SNN", "snn_radius_graph"]
 __version__ = "0.1.0"
