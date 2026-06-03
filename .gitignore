@@ -1,0 +1,24 @@
+# uv / sandbox-local caches and toolchains
+.uv-cache/
+.uv-python/
+.venv/
+.mplconfig/
+bench/.mplconfig/
+
+# build artifacts
+__pycache__/
+*.pyc
+*.so
+bench/_cpp/*.so
+bench/results_run.log
+
+# the upstream C++ reference repo (cloned locally for benchmarking)
+snn_orig/
+
+# numba compilation cache
+__pycache__/
+*.nbi
+*.nbc
+
+# pytest
+.pytest_cache/
